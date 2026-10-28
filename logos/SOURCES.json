@@ -1,0 +1,77 @@
+{
+  "sources": {
+    "SMCI": {
+      "source": "simple-icons",
+      "slug": "supermicro",
+      "url": "https://cdn.jsdelivr.net/npm/simple-icons@11/icons/supermicro.svg",
+      "file": "SMCI.svg"
+    },
+    "MSTR": {
+      "source": "simple-icons",
+      "slug": "microstrategy",
+      "url": "https://cdn.jsdelivr.net/npm/simple-icons@11/icons/microstrategy.svg",
+      "file": "MSTR.svg"
+    },
+    "COIN": {
+      "source": "simple-icons",
+      "slug": "coinbase",
+      "url": "https://cdn.jsdelivr.net/npm/simple-icons@11/icons/coinbase.svg",
+      "file": "COIN.svg"
+    },
+    "HOOD": {
+      "source": "simple-icons",
+      "slug": "robinhood",
+      "url": "https://cdn.jsdelivr.net/npm/simple-icons@11/icons/robinhood.svg",
+      "file": "HOOD.svg"
+    },
+    "AMD": {
+      "source": "simple-icons",
+      "slug": "amd",
+      "url": "https://cdn.jsdelivr.net/npm/simple-icons@11/icons/amd.svg",
+      "file": "AMD.svg"
+    },
+    "ORCL": {
+      "source": "simple-icons",
+      "slug": "oracle",
+      "url": "https://cdn.jsdelivr.net/npm/simple-icons@11/icons/oracle.svg",
+      "file": "ORCL.svg"
+    },
+    "NET": {
+      "source": "simple-icons",
+      "slug": "cloudflare",
+      "url": "https://cdn.jsdelivr.net/npm/simple-icons@11/icons/cloudflare.svg",
+      "file": "NET.svg"
+    },
+    "ENR.DE": {
+      "source": "wikimedia",
+      "title": "Siemens Energy logo white.svg",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/f/ff/Siemens_Energy_logo_white.svg",
+      "file": "ENR.DE.svg"
+    },
+    "ZAL.DE": {
+      "source": "simple-icons",
+      "slug": "zalando",
+      "url": "https://cdn.jsdelivr.net/npm/simple-icons@11/icons/zalando.svg",
+      "file": "ZAL.DE.svg"
+    },
+    "MRNA": {
+      "source": "wikimedia",
+      "title": "Moderna logo.svg",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/6/6a/Moderna_logo.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "file": "MRNA.svg"
+    },
+    "IFX.DE": {
+      "source": "wikimedia",
+      "title": "Infineon-Logo.svg",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/b/bb/Infineon-Logo.svg",
+      "file": "IFX.DE.svg"
+    },
+    "RHM.DE": {
+      "source": "wikimedia",
+      "title": "Rheinmetall AG Logo.svg",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/9/96/Rheinmetall_AG_Logo.svg",
+      "file": "RHM.DE.svg"
+    }
+  },
+  "monograms": {}
+}
