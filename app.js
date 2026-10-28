@@ -209,6 +209,9 @@
     const r = dialogResolver;
     dialogResolver = null;
     dialogMode = null;
+    // Drop focus so iOS/Safari does not leave a focus ring on the tile
+    const ae = document.activeElement;
+    if (ae && typeof ae.blur === "function") ae.blur();
     if (r) r(result);
   }
   function readValidatedNumber(id, { minExclusive = 0, allowZero = false } = {}) {
@@ -309,7 +312,7 @@
   function exportPayload() {
     return {
       app: "Aktien Ampel",
-      version: "V1.15",
+      version: "V1.16",
       exportedAt: new Date().toISOString(),
       settings: loadSettings(),
       positions: loadPositions(),

@@ -2,8 +2,6 @@ name: Update Aktien Ampel data
 
 on:
   schedule:
-    # Every 30 min, weekdays, approx. 08:00–22:00 Europe/Berlin
-    # UTC window 06:00–21:00 covers CET/CEST market hours.
     - cron: "0,30 6-21 * * 1-5"
   workflow_dispatch:
 
@@ -15,15 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Fetch data and compute signals
         run: python scripts/update_data.py
-
       - name: Commit data.json if changed
         run: |
           git config user.name "github-actions[bot]"

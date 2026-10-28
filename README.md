@@ -2,10 +2,6 @@
 
 Mobile-first PWA mit positionsabhängigem Kaufen/Warten/Halten/Verkaufen-Signal.
 
-Live: https://muellkuebel.github.io/aktien-ampel/
+Lokal unter `app/` entwickeln. Technische Pfade und Storage-Keys behalten den Bindestrich (`aktien-ampel`, `/aktien-ampel/`).
 
-Datenquelle: Yahoo Finance via `scripts/update_data.py` → `data.json`.
-
-Lokal: `python scripts/update_data.py` und danach `python -m http.server` im Projektordner.
-
-Version: V1.15
+Version: V1.16
