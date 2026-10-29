@@ -47,7 +47,6 @@
   }
   function savePositions(pos) {
     localStorage.setItem(POS_KEY, JSON.stringify(pos));
-    try { syncHeldToServer(); } catch (e) {}
   }
   function loadHistory() {
     try {
@@ -640,6 +639,7 @@
     }
     if (obj.positions && typeof obj.positions === "object") {
       savePositions(obj.positions);
+      syncHeldToServer();
     }
     if (Array.isArray(obj.history)) {
       saveHistory(obj.history);
@@ -843,6 +843,7 @@
       lastFx: stock.currency === "USD" ? fx : 1,
     };
     savePositions(pos);
+    syncHeldToServer();
     render(marketData);
   }
 
@@ -948,6 +949,7 @@
     if (!held) return;
     delete pos[stock.ticker];
     savePositions(pos);
+    syncHeldToServer();
 
     const sellFx = stock.currency === "USD" ? currentEurUsd() : 1;
     const buyFx = held.buyFx || sellFx || 1;
