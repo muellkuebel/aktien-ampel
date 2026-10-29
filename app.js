@@ -5,6 +5,7 @@
 
   const grid = document.getElementById("grid");
   const stand = document.getElementById("stand");
+  const standMain = document.getElementById("stand-main");
   const menuFx = document.getElementById("menu-fx");
   const dialog = document.getElementById("dialog");
   const dialogTitle = document.getElementById("dialog-title");
@@ -358,7 +359,7 @@
   function exportPayload() {
     return {
       app: "Aktien Ampel",
-      version: "V1.17",
+      version: "V1.18",
       exportedAt: new Date().toISOString(),
       settings: loadSettings(),
       positions: loadPositions(),
@@ -872,12 +873,40 @@
     updateOrphanMenu(data);
   }
 
+  function formatStandShort(iso, fallbackDisplay) {
+    if (!iso) {
+      // fallbackDisplay like "29.10.2026 04:45 (Berlin)" → "Stand 29.10. 04:45"
+      if (!fallbackDisplay || fallbackDisplay === "–") return "Stand: –";
+      const m = String(fallbackDisplay).match(/(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}:\d{2})/);
+      if (m) return `Stand ${m[1]}.${m[2]}. ${m[4]}`;
+      return `Stand: ${fallbackDisplay.replace("\u00a0", " ").replace(" (Berlin)", "")}`;
+    }
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return formatStandShort(null, fallbackDisplay);
+    const fmt = new Intl.DateTimeFormat("de-DE", {
+      timeZone: "Europe/Berlin",
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    const parts = Object.fromEntries(
+      fmt.formatToParts(d).filter((x) => x.type !== "literal").map((x) => [x.type, x.value])
+    );
+    return `Stand ${parts.day}.${parts.month}. ${parts.hour}:${parts.minute}`;
+  }
+
   function updateStand(data) {
-    stand.textContent = `Stand: ${data.updatedDisplay || "–"}`;
+    const short = formatStandShort(data.updated, data.updatedDisplay);
+    if (standMain) standMain.textContent = short;
+    if (stand) stand.textContent = `Stand: ${data.updatedDisplay || "–"}`;
     const fx = data.fx?.usdPerEur;
-    menuFx.textContent = fx
-      ? `EURUSD: ${Number(fx).toFixed(4).replace(".", ",")}`
-      : "EURUSD: –";
+    if (menuFx) {
+      menuFx.textContent = fx
+        ? `EURUSD: ${Number(fx).toFixed(4).replace(".", ",")}`
+        : "EURUSD: –";
+    }
   }
 
   function render(data) {
