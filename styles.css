@@ -38,30 +38,43 @@ html, body {
   inset: 0;
 }
 
-/* iOS 26/27 Liquid Glass: solid fixed plate near top (≥6px, ≥80% wide, top≤4px)
-   makes the status bar take a flat colour with NO scroll-edge blur (Moerkerke).
-   Also: do NOT use black-translucent — that puts page pixels under the bar and
-   triggers the system blur. */
-.status-fill {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: max(8px, env(safe-area-inset-top, 0px));
-  min-height: 8px;
-  background: #000;
-  z-index: 10000;
-  pointer-events: none;
+/* iOS 26/27 scroll-pocket blur (same fix as Geräte Laufzettel):
+   WebKit hides the Liquid Glass edge only when a fixed/sticky opaque edge exists.
+   Paintless strip: background-clip:text so the color is sampled but not drawn.
+   Height 12px > thinBorderWidth (~10px). Only in standalone Home Screen mode. */
+.ios-pwa-status-strip {
+  display: none;
+}
+@supports (-webkit-touch-callout: none) {
+  :root[data-standalone] .ios-pwa-status-strip {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 12px;
+    z-index: 2147483646;
+    pointer-events: none;
+    background-color: #000000;
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
 }
 
 .top-meta {
   flex: 0 0 auto;
+  position: sticky;
+  top: 0;
+  z-index: 30;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
   margin: 0 0 4px;
-  padding: 0 2px;
+  padding: 4px 2px 6px;
+  background-color: #000000;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 .stand-main,
 .disclaimer-main {

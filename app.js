@@ -381,7 +381,7 @@
   function exportPayload() {
     return {
       app: "Aktien Ampel",
-      version: "V1.21",
+      version: "V1.22",
       exportedAt: new Date().toISOString(),
       settings: loadSettings(),
       positions: loadPositions(),
