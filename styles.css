@@ -683,3 +683,17 @@ html, body {
   transform: none;
   filter: none;
 }
+
+.dlg-kurs-meta {
+  margin: 4px 0 0;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+}
+.dlg-kurs-meta.is-stale {
+  color: #fbbf24;
+}
+.dlg-kurs-hint {
+  margin-top: 2px;
+  margin-bottom: 4px;
+}

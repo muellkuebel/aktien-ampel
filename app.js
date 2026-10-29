@@ -143,6 +143,52 @@
     if (!d) return isoDate;
     return `${d}.${m}.${y}`;
   }
+
+  /** Kurs-Zeitstempel für Dialoge (Europe/Berlin). */
+  function formatKursMeta(iso) {
+    if (!iso) return { text: "Kurszeit unbekannt", stale: false };
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return { text: "Kurszeit unbekannt", stale: false };
+    const berlinYmd = (dt) =>
+      new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin" }).format(dt);
+    const fmt = new Intl.DateTimeFormat("de-DE", {
+      timeZone: "Europe/Berlin",
+      weekday: "short",
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    const parts = Object.fromEntries(
+      fmt.formatToParts(d).filter((x) => x.type !== "literal").map((x) => [x.type, x.value])
+    );
+    const time = `${parts.hour}:${parts.minute}`;
+    const sameDay = berlinYmd(d) === berlinYmd(new Date());
+    const wd = (parts.weekday || "").replace(/\.$/, "");
+    const text = sameDay
+      ? `Kurs von ${time}`
+      : `Kurs von ${wd} ${parts.day}.${parts.month}., ${time}`;
+    const ageMin = (Date.now() - d.getTime()) / 60000;
+    const isWeekday = ["Mon", "Tue", "Wed", "Thu", "Fri"].includes(
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: "Europe/Berlin",
+        weekday: "short",
+      }).format(new Date())
+    );
+    const stale = isWeekday && ageMin > 45;
+    return { text, stale };
+  }
+
+  function kursMetaHtml() {
+    const meta = formatKursMeta(marketData && marketData.updated);
+    const cls = meta.stale ? "dlg-kurs-meta is-stale" : "dlg-kurs-meta";
+    return (
+      `<p class="${cls}">${escapeHtml(meta.text)}</p>` +
+      `<p class="dlg-hint dlg-kurs-hint">Echten Ausführungskurs aus der Broker-App eintragen</p>`
+    );
+  }
+
   function todayISO() {
     return new Intl.DateTimeFormat("en-CA", {
       timeZone: "Europe/Berlin",
@@ -312,7 +358,7 @@
   function exportPayload() {
     return {
       app: "Aktien Ampel",
-      version: "V1.16",
+      version: "V1.17",
       exportedAt: new Date().toISOString(),
       settings: loadSettings(),
       positions: loadPositions(),
@@ -418,7 +464,8 @@
           ${curToggle}
         </div>
         <label class="dlg-label" for="kaufpreis">Kaufpreis (<span id="cur-label">${isUsd ? "USD" : "EUR"}</span>)</label>
-        <input id="kaufpreis" class="dlg-input" type="text" inputmode="decimal" lang="de" autocomplete="off" value="${escapeHtml(prefillNative)}" />
+        <input id="kaufpreis" class="dlg-input" type="text" inputmode="decimal" lang="de" autocomplete="off" enterkeyhint="done" value="${escapeHtml(prefillNative)}" />
+        ${kursMetaHtml()}
         <div id="buy-qty-fields">
           <label class="dlg-label" for="betrag">Betrag inkl. Gebühr (EUR)</label>
           <input id="betrag" class="dlg-input" type="text" inputmode="decimal" lang="de" autocomplete="off" value="${escapeHtml(formatDecimalInput(settings.defaultBuyEur, 2))}" />
@@ -604,6 +651,7 @@
         </div>
         <label class="dlg-label" for="verkaufspreis">Verkaufspreis (<span id="cur-label-sell">${isUsd ? "USD" : "EUR"}</span>)</label>
         <input id="verkaufspreis" class="dlg-input" type="text" inputmode="decimal" lang="de" autocomplete="off" enterkeyhint="done" value="${escapeHtml(prefill)}" />
+        ${kursMetaHtml()}
         <p class="dlg-hint">Gebühr Verkauf: ${escapeHtml(formatEur(settings.feeSell))}</p>
         <div id="sell-preview">${sellPreviewHtml(stock, position, stock.price)}</div>
       `,
@@ -934,7 +982,8 @@
   }
 
   async function load() {
-    const res = await fetch("data.json", { cache: "no-store" });
+    const bust = `data.json?t=${Date.now()}`;
+    const res = await fetch(bust, { cache: "no-store" });
     if (!res.ok) throw new Error(`data.json HTTP ${res.status}`);
     return res.json();
   }

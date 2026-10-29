@@ -1,6 +1,6 @@
 {
-  "updated": "2026-10-29T00:54:36+01:00",
-  "updatedDisplay": "29.10.2026 00:54 (Berlin)",
+  "updated": "2026-10-29T04:45:32+01:00",
+  "updatedDisplay": "29.10.2026 04:45 (Berlin)",
   "source": "Yahoo Finance chart API v8, range=3mo interval=1d",
   "rule": {
     "smaWindow": 20,
@@ -8,10 +8,10 @@
     "zSell": 1.5,
     "description": "Bollinger-style z=(last−SMA20)/SD20. Nicht im Besitz: z≤−1.5 → Kaufen, sonst Warten. Im Besitz: z≥+1.5 → Verkaufen, sonst Halten."
   },
-  "version": "V1.16",
+  "version": "V1.17",
   "fx": {
     "pair": "EURUSD=X",
-    "usdPerEur": 1.1162,
+    "usdPerEur": 1.115,
     "note": "USD amount / usdPerEur = EUR amount"
   },
   "stocks": [

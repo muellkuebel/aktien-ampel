@@ -1,4 +1,4 @@
-const CACHE = "aktien-ampel-v1.16";
+const CACHE = "aktien-ampel-v1.17";
 const ASSETS = [
   "./",
   "./index.html",
@@ -30,15 +30,19 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (url.pathname.endsWith("data.json")) {
-    // Network-first for live signals
+    // Always network-first; never serve stale data when online
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, { cache: "no-store" })
         .then((res) => {
           const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(event.request, copy));
+          // Cache under stable key (no query) for offline fallback
+          const stable = new Request(url.origin + url.pathname, { credentials: event.request.credentials });
+          caches.open(CACHE).then((c) => c.put(stable, copy));
           return res;
         })
-        .catch(() => caches.match(event.request))
+        .catch(() =>
+          caches.match(url.origin + url.pathname).then((cached) => cached || caches.match(event.request))
+        )
     );
     return;
   }
