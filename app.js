@@ -188,9 +188,52 @@
     const meta = formatKursMeta(marketData && marketData.updated);
     const cls = meta.stale ? "dlg-kurs-meta is-stale" : "dlg-kurs-meta";
     return (
-      `<p class="${cls}">${escapeHtml(meta.text)}</p>` +
+      `<div class="dlg-kurs-row"><p class="${cls}" id="kurs-meta">${escapeHtml(meta.text)}</p>` +
+      `<button type="button" class="live-btn" id="live-btn">Aktuellen Kurs abrufen</button></div>` +
       `<p class="dlg-hint dlg-kurs-hint">Echten Ausführungskurs aus der Broker-App eintragen</p>`
     );
+  }
+
+  const QUOTE_URL = "https://aktien-ampel-kurs.muellkuebel.workers.dev/";
+  /** Live-Kurs über den Cloudflare-Kursdienst holen und ins Preisfeld schreiben. */
+  function wireLiveQuote(stock, input, getUnit, onUpdate) {
+    const btn = dialogBody.querySelector("#live-btn");
+    const metaEl = dialogBody.querySelector("#kurs-meta");
+    if (!btn || !input) return;
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      btn.textContent = "Lädt …";
+      try {
+        const r = await fetch(QUOTE_URL + "?s=" + encodeURIComponent(stock.ticker) + "&t=" + Date.now(), { cache: "no-store" });
+        const j = await r.json();
+        if (!r.ok || typeof j.price !== "number") throw new Error("kein Kurs");
+        let val = j.price;
+        if (getUnit() === "EUR" && stock.currency === "USD") {
+          const rate = currentEurUsd();
+          if (rate) val = val / rate;
+        }
+        input.value = formatDecimalInput(val, 2);
+        input.classList.remove("invalid");
+        if (metaEl) {
+          const t = j.time ? new Date(j.time * 1000) : new Date();
+          const hm = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit", hour12: false }).format(t);
+          const sameDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin" }).format(t) === todayISO();
+          const day = sameDay ? "" : new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", weekday: "short", day: "2-digit", month: "2-digit" }).format(t).replace(/\.,?/, "") + ", ";
+          metaEl.textContent = `Live-Kurs von ${day}${hm}`;
+          metaEl.classList.remove("is-stale");
+          metaEl.classList.add("is-live");
+        }
+        if (onUpdate) onUpdate();
+        btn.textContent = "Aktualisiert ✓";
+      } catch (e) {
+        btn.textContent = "Fehler – nochmal";
+      } finally {
+        btn.disabled = false;
+        setTimeout(() => {
+          if (btn.isConnected && btn.textContent !== "Lädt …") btn.textContent = "Aktuellen Kurs abrufen";
+        }, 2500);
+      }
+    });
   }
 
   function todayISO() {
@@ -372,7 +415,7 @@
   function exportPayload() {
     return {
       app: "Aktien Ampel",
-      version: "V1.23",
+      version: "V1.24",
       exportedAt: new Date().toISOString(),
       settings: loadSettings(),
       positions: loadPositions(),
@@ -585,6 +628,7 @@
 
     priceInput?.addEventListener("input", refreshBuyPreview);
     renderQtyFields();
+    wireLiveQuote(stock, priceInput, () => buyPriceUnit, refreshBuyPreview);
 
     const result = await resultPromise;
     if (!result) return;
@@ -689,6 +733,7 @@
       box.innerHTML = sellPreviewHtml(stock, position, nativeFromDisplay(v));
     };
     if (vp) vp.addEventListener("input", refresh);
+    wireLiveQuote(stock, vp, () => inputUnit, refresh);
     dialogBody.querySelectorAll(".cur-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         const want = btn.dataset.cur;
