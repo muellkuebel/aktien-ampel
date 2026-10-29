@@ -42,17 +42,19 @@ html, body {
    WebKit hides the Liquid Glass edge only when a fixed/sticky opaque edge exists.
    Paintless strip: background-clip:text so the color is sampled but not drawn.
    Height 12px > thinBorderWidth (~10px). Only in standalone Home Screen mode. */
+/* Like Anweisungen (black PWA): paintless 12px strip + status-bar-style black.
+   Also show without data-standalone so a stale Home Screen install still gets the edge. */
 .ios-pwa-status-strip {
   display: none;
 }
 @supports (-webkit-touch-callout: none) {
-  :root[data-standalone] .ios-pwa-status-strip {
+  .ios-pwa-status-strip {
     display: block;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    height: 12px;
+    height: 12px; /* > thinBorderWidth (~10px) */
     z-index: 2147483646;
     pointer-events: none;
     background-color: #000000;
@@ -63,18 +65,19 @@ html, body {
 
 .top-meta {
   flex: 0 0 auto;
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 30;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
-  margin: 0 0 4px;
-  padding: 4px 2px 6px;
+  margin: 0 -6px 4px;
+  padding: max(6px, var(--safe-top)) 8px 6px;
+  /* Opaque solid edge for iOS 26/27 scroll-pocket (alpha must be 1) */
   background-color: #000000;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
+  filter: none;
 }
 .stand-main,
 .disclaimer-main {
@@ -106,21 +109,15 @@ html, body {
 
 .app {
   position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   max-width: 480px;
   margin: 0 auto;
   box-sizing: border-box;
-  height: var(--app-h, 100%);
-  max-height: var(--app-h, 100%);
-  padding:
-    max(8px, var(--safe-top))
-    6px
-    max(6px, var(--safe-bottom))
-    6px;
+  /* Fill the real screen; do not use a JS height that can leave a black gap below */
+  height: auto;
+  max-height: none;
+  padding: 0 6px max(4px, var(--safe-bottom));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -326,7 +323,8 @@ html, body {
 /* Bilanz on main — leave room on the right for FAB */
 .bilanz {
   flex: 0 0 auto;
-  margin-top: 6px;
+  margin-top: 4px;
+  margin-bottom: 0;
   margin-right: calc(var(--fab-size) + 12px);
   background: transparent;
   border: none;
@@ -362,7 +360,7 @@ html, body {
   position: fixed;
   z-index: 40;
   right: calc(10px + var(--safe-right));
-  bottom: calc(10px + var(--safe-bottom));
+  bottom: calc(6px + var(--safe-bottom));
   width: 36px;
   height: 36px;
   border-radius: 0;

@@ -30,16 +30,7 @@
 
   let marketData = null;
 
-  function setAppHeight() {
-    const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    document.documentElement.style.setProperty("--app-h", Math.round(h) + "px");
-  }
-  setAppHeight();
-  window.addEventListener("resize", setAppHeight);
-  window.addEventListener("orientationchange", () => setTimeout(setAppHeight, 150));
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener("resize", setAppHeight);
-  }
+  /* Height comes from CSS inset:0 — JS height left a black gap under the Bilanz on iPhone. */
 
   let dialogResolver = null;
   let dialogMode = null; // "buy" | "sell" | "confirm"
@@ -381,7 +372,7 @@
   function exportPayload() {
     return {
       app: "Aktien Ampel",
-      version: "V1.22",
+      version: "V1.23",
       exportedAt: new Date().toISOString(),
       settings: loadSettings(),
       positions: loadPositions(),
