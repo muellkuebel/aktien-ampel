@@ -1,4 +1,5 @@
 (() => {
+  const APP_VERSION = "V1.29";
   const POS_KEY = "aktien-ampel-positions";
   const HIST_KEY = "aktien-ampel-history";
   const SET_KEY = "aktien-ampel-settings";
@@ -415,7 +416,7 @@
   function exportPayload() {
     return {
       app: "Aktien Ampel",
-      version: "V1.28",
+      version: APP_VERSION,
       exportedAt: new Date().toISOString(),
       settings: loadSettings(),
       positions: loadPositions(),
@@ -1197,14 +1198,31 @@
       tryApply();
       document.addEventListener("close", () => setTimeout(syncBar, 0), true);
     });
-    navigator.serviceWorker.register("sw.js").then((reg) => {
-      // iOS-PWA lädt beim Zurückholen nicht neu: dann aktiv nach Updates fragen.
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState !== "visible") return;
-        acted = false; // neue Sitzung: noch keine Kachel angetippt
-        reg.update().catch(() => {});
-        setTimeout(tryApply, 0);
-      });
-    }).catch(() => {});
+    // Zusätzlich zum Service-Worker-Ereignis: Versionsnummer direkt vom Server
+    // vergleichen (iOS meldet ein neues Update oft gar nicht oder sehr spät).
+    const RUNNING = APP_VERSION;
+    let swReg = null;
+    const checkVersion = async () => {
+      if (pending) { tryApply(); return; }
+      try {
+        if (swReg) swReg.update().catch(() => {});
+        const r = await fetch("config.json?t=" + Date.now(), { cache: "no-store" });
+        const j = await r.json();
+        if (j && j.version && j.version !== RUNNING) {
+          pending = true;
+          document.addEventListener("close", () => setTimeout(syncBar, 0), true);
+          tryApply();
+        }
+      } catch (e) {}
+    };
+    navigator.serviceWorker.register("sw.js").then((reg) => { swReg = reg; }).catch(() => {});
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "visible") return;
+      acted = false; // neue Sitzung: noch keine Kachel angetippt
+      checkVersion();
+    });
+    window.addEventListener("pageshow", (e) => { if (e.persisted) { acted = false; checkVersion(); } });
+    setTimeout(checkVersion, 1500);
+    setInterval(() => { if (document.visibilityState === "visible") checkVersion(); }, 60000);
   }
 })();

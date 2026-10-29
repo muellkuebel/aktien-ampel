@@ -1,4 +1,4 @@
-const CACHE = "aktien-ampel-v1.28";
+const CACHE = "aktien-ampel-v1.29";
 const ASSETS = [
   "./",
   "./index.html",
@@ -59,7 +59,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   // Seite und Code (HTML, JS, CSS, Manifest): network-first, Cache nur offline.
-  const isCode = req.mode === "navigate" || /\.(html|js|css|webmanifest)$/i.test(url.pathname) || url.pathname.endsWith("/");
+  const isCode = req.mode === "navigate" || /\.(html|js|css|json|webmanifest)$/i.test(url.pathname) || url.pathname.endsWith("/");
   if (isCode) {
     event.respondWith(
       fetch(req, { cache: "no-cache" })
