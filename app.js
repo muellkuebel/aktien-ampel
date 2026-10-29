@@ -1,5 +1,5 @@
 (() => {
-  const APP_VERSION = "V1.30";
+  const APP_VERSION = "V1.31";
   const POS_KEY = "aktien-ampel-positions";
   const HIST_KEY = "aktien-ampel-history";
   const SET_KEY = "aktien-ampel-settings";
@@ -978,6 +978,11 @@
     if (!data) return;
     marketData = data;
     updateStand(data);
+    // Bereits dekodierte Logo-Elemente wiederverwenden (kein Aufploppen)
+    const oldLogos = new Map();
+    grid.querySelectorAll("img.tile-logo.is-loaded").forEach((img) => {
+      oldLogos.set(img.getAttribute("src"), img);
+    });
     grid.innerHTML = "";
     if (!introStart) introStart = performance.now();
     const introElapsed = performance.now() - introStart;
@@ -1033,11 +1038,17 @@
         </div>
         ${btnHtml}
       `;
-      const logoImg = tile.querySelector(".tile-logo");
+      let logoImg = tile.querySelector(".tile-logo");
+      const reuse = oldLogos.get(logoSrc);
+      if (logoImg && reuse) {
+        logoImg.replaceWith(reuse);
+        logoImg = reuse;
+        oldLogos.delete(logoSrc);
+      }
       if (logoImg && !loadedLogos.has(logoSrc)) {
         const done = () => {
           loadedLogos.add(logoSrc);
-          requestAnimationFrame(() => logoImg.classList.add("is-loaded"));
+          logoImg.classList.add("is-loaded");
         };
         if (logoImg.complete && logoImg.naturalWidth) done();
         else logoImg.addEventListener("load", done, { once: true });
