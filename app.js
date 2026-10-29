@@ -415,7 +415,7 @@
   function exportPayload() {
     return {
       app: "Aktien Ampel",
-      version: "V1.25",
+      version: "V1.26",
       exportedAt: new Date().toISOString(),
       settings: loadSettings(),
       positions: loadPositions(),
@@ -1002,7 +1002,7 @@
       const actionable = signal === "Kaufen" || signal === "Verkaufen";
       const btnHtml = actionable
         ? `<button type="button" class="pos-btn ${signal === "Verkaufen" ? "btn-sell" : "btn-buy"}">${
-            signal === "Verkaufen" ? "Verkauft" : "Gekauft"
+            signal === "Verkaufen" ? "Verkauf eintragen" : "Kauf eintragen"
           }</button>`
         : "";
 
