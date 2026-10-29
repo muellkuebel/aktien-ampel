@@ -823,3 +823,31 @@ html, body {
 .stand-main { cursor: pointer; -webkit-tap-highlight-color: transparent; transition: color 0.3s; }
 .stand-main.is-live { color: #22c55e; }
 .stand-main.is-loading { opacity: 0.55; }
+
+.update-hint {
+  position: fixed;
+  left: 50%;
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 8px 14px;
+  border-radius: 12px;
+  background: #1c1c1e;
+  border: 1px solid #334155;
+  color: #fff;
+  font-size: 14px;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+.update-hint button {
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: #fff;
+  color: #1c1c1e;
+  font: inherit;
+  font-weight: 600;
+}

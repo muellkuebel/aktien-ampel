@@ -1,4 +1,4 @@
-const CACHE = "aktien-ampel-v1.26";
+const CACHE = "aktien-ampel-v1.27";
 const ASSETS = [
   "./",
   "./index.html",
@@ -15,7 +15,18 @@ const ASSETS = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting())
+    (async () => {
+      const cache = await caches.open(CACHE);
+      await Promise.all(
+        ASSETS.map(async (u) => {
+          try {
+            const res = await fetch(u, { cache: "reload" });
+            if (res.ok) await cache.put(u, res);
+          } catch (e) {}
+        })
+      );
+      await self.skipWaiting();
+    })()
   );
 });
 
@@ -28,25 +39,45 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
+  const req = event.request;
+  if (req.method !== "GET") return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+
   if (url.pathname.endsWith("data.json")) {
     // Always network-first; never serve stale data when online
     event.respondWith(
-      fetch(event.request, { cache: "no-store" })
+      fetch(req, { cache: "no-store" })
         .then((res) => {
           const copy = res.clone();
-          // Cache under stable key (no query) for offline fallback
-          const stable = new Request(url.origin + url.pathname, { credentials: event.request.credentials });
-          caches.open(CACHE).then((c) => c.put(stable, copy));
+          caches.open(CACHE).then((c) => c.put(url.origin + url.pathname, copy));
           return res;
         })
-        .catch(() =>
-          caches.match(url.origin + url.pathname).then((cached) => cached || caches.match(event.request))
+        .catch(() => caches.match(url.origin + url.pathname, { ignoreSearch: true }))
+    );
+    return;
+  }
+
+  // Seite und Code (HTML, JS, CSS, Manifest): network-first, Cache nur offline.
+  const isCode = req.mode === "navigate" || /\.(html|js|css|webmanifest)$/i.test(url.pathname) || url.pathname.endsWith("/");
+  if (isCode) {
+    event.respondWith(
+      fetch(req, { cache: "no-cache" })
+        .then((res) => {
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(req.mode === "navigate" ? "./index.html" : req, copy));
+          }
+          return res;
+        })
+        .catch(async () =>
+          (await caches.match(req, { ignoreSearch: true })) ||
+          (req.mode === "navigate" ? caches.match("./index.html") : Response.error())
         )
     );
     return;
   }
-  event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
-  );
+
+  // Bilder/Logos: cache-first
+  event.respondWith(caches.match(req).then((cached) => cached || fetch(req)));
 });

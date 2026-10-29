@@ -415,7 +415,7 @@
   function exportPayload() {
     return {
       app: "Aktien Ampel",
-      version: "V1.26",
+      version: "V1.27",
       exportedAt: new Date().toISOString(),
       settings: loadSettings(),
       positions: loadPositions(),
@@ -1155,7 +1155,56 @@
       console.error(err);
     });
 
+  // Auto-Update (wie Geräte Laufzettel): neuer Service Worker übernimmt sofort
+  // (skipWaiting + clients.claim). Still neu laden nur, solange in dieser Sitzung
+  // noch nichts angetippt wurde und kein Dialog offen ist. Sonst erscheint ein
+  // Hinweis „Update verfügbar · Neu laden“ (nur ohne offenen Dialog).
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+    const hadController = Boolean(navigator.serviceWorker.controller);
+    let acted = false;
+    let pending = false;
+    let bar = null;
+    const markActed = () => { acted = true; };
+    ["pointerdown", "touchstart", "keydown"].forEach((ev) =>
+      window.addEventListener(ev, markActed, { capture: true, passive: true })
+    );
+    const dialogOpen = () => Boolean(document.querySelector("dialog[open]"));
+    const syncBar = () => {
+      if (!pending) return;
+      if (dialogOpen()) {
+        if (bar) bar.remove();
+        return;
+      }
+      if (!bar) {
+        bar = document.createElement("div");
+        bar.className = "update-hint";
+        bar.setAttribute("role", "status");
+        bar.innerHTML = '<span>Update verfügbar</span><button type="button">Neu laden</button>';
+        bar.querySelector("button").addEventListener("click", () => {
+          if (!dialogOpen()) location.reload();
+        });
+      }
+      if (!bar.isConnected) document.body.appendChild(bar);
+    };
+    const tryApply = () => {
+      if (!pending) return;
+      if (!acted && !dialogOpen()) location.reload();
+      else syncBar();
+    };
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!hadController || pending) return;
+      pending = true;
+      tryApply();
+      document.addEventListener("close", () => setTimeout(syncBar, 0), true);
+    });
+    navigator.serviceWorker.register("sw.js").then((reg) => {
+      // iOS-PWA lädt beim Zurückholen nicht neu: dann aktiv nach Updates fragen.
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState !== "visible") return;
+        acted = false; // neue Sitzung: noch keine Kachel angetippt
+        reg.update().catch(() => {});
+        setTimeout(tryApply, 0);
+      });
+    }).catch(() => {});
   }
 })();
