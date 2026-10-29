@@ -1,5 +1,5 @@
 (() => {
-  const APP_VERSION = "V1.31";
+  const APP_VERSION = "V1.32";
   const POS_KEY = "aktien-ampel-positions";
   const HIST_KEY = "aktien-ampel-history";
   const SET_KEY = "aktien-ampel-settings";
@@ -47,6 +47,7 @@
   }
   function savePositions(pos) {
     localStorage.setItem(POS_KEY, JSON.stringify(pos));
+    try { syncHeldToServer(); } catch (e) {}
   }
   function loadHistory() {
     try {
@@ -196,6 +197,10 @@
   }
 
   const QUOTE_URL = "https://aktien-ampel-kurs.muellkuebel.workers.dev/";
+  const PUSH_URL = "https://aktien-ampel-kurs.muellkuebel.workers.dev";
+  const VAPID_PUBLIC_KEY = "BD_fyfqjOUbe24o7aYxPt9z7VxKRdLCPmafCop6mYgG7xeywHkKGBvy_y2wUqwrTLNo5cpLg0OcvU7wUWRfScqI";
+  const PUSH_SUB_KEY = "aktien-ampel-push-endpoint";
+
   /** Live-Kurs über den Cloudflare-Kursdienst holen und ins Preisfeld schreiben. */
   function wireLiveQuote(stock, input, getUnit, onUpdate) {
     const btn = dialogBody.querySelector("#live-btn");
@@ -260,6 +265,179 @@
     }
     return NaN;
   }
+  /* ---- Web Push (iOS 16.4+ Home-Screen-PWA) ---- */
+  function isStandalonePwa() {
+    try {
+      return window.navigator.standalone === true
+        || window.matchMedia("(display-mode: standalone)").matches
+        || window.matchMedia("(display-mode: window-controls-overlay)").matches;
+    } catch (e) {
+      return false;
+    }
+  }
+  function urlBase64ToUint8Array(base64String) {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = atob(base64);
+    const out = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+  function heldTickerList() {
+    return Object.keys(loadPositions());
+  }
+  function pushSupported() {
+    return isStandalonePwa()
+      && "serviceWorker" in navigator
+      && "PushManager" in window
+      && "Notification" in window;
+  }
+  async function getPushReg() {
+    if (!("serviceWorker" in navigator)) return null;
+    return navigator.serviceWorker.ready;
+  }
+  async function currentPushSubscription() {
+    const reg = await getPushReg();
+    if (!reg) return null;
+    try { return await reg.pushManager.getSubscription(); } catch (e) { return null; }
+  }
+  async function postPush(path, body) {
+    const r = await fetch(PUSH_URL + path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    let data = null;
+    try { data = await r.json(); } catch (e) { data = null; }
+    return { ok: r.ok, status: r.status, data };
+  }
+  async function syncHeldToServer() {
+    try {
+      const sub = await currentPushSubscription();
+      if (!sub) return;
+      await postPush("/held", { subscription: sub.toJSON(), held: heldTickerList() });
+    } catch (e) {
+      console.warn("held-sync", e);
+    }
+  }
+  function setPushUi(state) {
+    const hint = document.getElementById("push-hint");
+    const controls = document.getElementById("push-controls");
+    const toggle = document.getElementById("btn-push-toggle");
+    const testBtn = document.getElementById("btn-push-test");
+    const status = document.getElementById("push-status");
+    if (!hint || !controls) return;
+    if (!pushSupported()) {
+      controls.hidden = true;
+      hint.textContent = "Zum Empfangen von Signal-Benachrichtigungen die App über Teilen → „Zum Home-Bildschirm“ installieren (iOS 16.4 oder neuer) und von dort öffnen.";
+      return;
+    }
+    controls.hidden = false;
+    hint.textContent = "Wenn eine Kachel auf Kaufen (grün) oder Verkaufen (rot) springt, erscheint eine Mitteilung – auch bei geschlossener App.";
+    if (!toggle || !status) return;
+    if (state === "on") {
+      toggle.textContent = "Benachrichtigungen ausschalten";
+      toggle.classList.add("is-on");
+      toggle.disabled = false;
+      if (testBtn) testBtn.hidden = false;
+      status.textContent = "Aktiv – Signale werden gemeldet.";
+      status.className = "menu-note push-on";
+    } else if (state === "denied") {
+      toggle.textContent = "Benachrichtigungen blockiert";
+      toggle.disabled = true;
+      if (testBtn) testBtn.hidden = true;
+      status.textContent = "In den iPhone-Einstellungen unter Mitteilungen die Erlaubnis für Aktien Ampel erlauben.";
+      status.className = "menu-note push-off";
+    } else {
+      toggle.textContent = "Benachrichtigungen einschalten";
+      toggle.classList.remove("is-on");
+      toggle.disabled = false;
+      if (testBtn) testBtn.hidden = true;
+      status.textContent = "Ausgeschaltet.";
+      status.className = "menu-note push-off";
+    }
+  }
+  async function refreshPushUi() {
+    if (!pushSupported()) { setPushUi("unsupported"); return; }
+    if (Notification.permission === "denied") { setPushUi("denied"); return; }
+    const sub = await currentPushSubscription();
+    setPushUi(sub ? "on" : "off");
+  }
+  async function enablePush() {
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") {
+      await refreshPushUi();
+      return;
+    }
+    const reg = await getPushReg();
+    if (!reg) throw new Error("Service Worker fehlt");
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+    const r = await postPush("/subscribe", {
+      subscription: sub.toJSON(),
+      held: heldTickerList(),
+    });
+    if (!r.ok) throw new Error((r.data && r.data.error) || ("HTTP " + r.status));
+    try { localStorage.setItem(PUSH_SUB_KEY, sub.endpoint); } catch (e) {}
+    await refreshPushUi();
+  }
+  async function disablePush() {
+    const sub = await currentPushSubscription();
+    if (sub) {
+      try { await postPush("/unsubscribe", { subscription: sub.toJSON() }); } catch (e) {}
+      try { await sub.unsubscribe(); } catch (e) {}
+    }
+    try { localStorage.removeItem(PUSH_SUB_KEY); } catch (e) {}
+    await refreshPushUi();
+  }
+  async function testPush() {
+    const sub = await currentPushSubscription();
+    if (!sub) return;
+    const status = document.getElementById("push-status");
+    const r = await postPush("/test", {
+      subscription: sub.toJSON(),
+      signal: "Kaufen",
+      name: "Robinhood",
+      body: "Test · so sehen Signal-Meldungen aus",
+    });
+    if (status) {
+      status.textContent = r.ok
+        ? "Test gesendet – prüfe die Mitteilungen."
+        : "Test fehlgeschlagen (" + ((r.data && r.data.error) || r.status) + ").";
+      status.className = "menu-note " + (r.ok ? "push-on" : "push-off");
+    }
+  }
+  function wirePushMenu() {
+    const toggle = document.getElementById("btn-push-toggle");
+    const testBtn = document.getElementById("btn-push-test");
+    if (toggle) {
+      toggle.addEventListener("click", async () => {
+        toggle.disabled = true;
+        try {
+          const sub = await currentPushSubscription();
+          if (sub) await disablePush();
+          else await enablePush();
+        } catch (e) {
+          const status = document.getElementById("push-status");
+          if (status) {
+            status.textContent = "Fehler: " + (e && e.message ? e.message : e);
+            status.className = "menu-note push-off";
+          }
+        } finally {
+          if (Notification.permission !== "denied") toggle.disabled = false;
+          await refreshPushUi();
+        }
+      });
+    }
+    if (testBtn) testBtn.addEventListener("click", () => { testPush().catch(() => {}); });
+    refreshPushUi();
+  }
+
   function displaySignal(held, z, rule) {
     const zBuy = Number(rule?.zBuy ?? -1.5);
     const zSell = Number(rule?.zSell ?? 1.5);
@@ -378,7 +556,7 @@
   function closeMenu() {
     if (menu.open) menu.close();
   }
-  menuBtn.addEventListener("click", openMenu);
+  menuBtn.addEventListener("click", () => { refreshPushUi(); openMenu(); });
   menuClose.addEventListener("click", closeMenu);
   menu.addEventListener("click", (e) => {
     if (e.target === menu) closeMenu();
@@ -1172,10 +1350,12 @@
     if (document.visibilityState === "visible") refreshLive();
   });
 
+  wirePushMenu();
   load()
     .then((d) => {
       render(d);
       refreshLive();
+      syncHeldToServer();
     })
     .catch((err) => {
       if (stand) stand.textContent = "Stand: Daten fehlen";

@@ -1,6 +1,6 @@
 {
   "appName": "Aktien Ampel",
-  "version": "V1.31",
+  "version": "V1.32",
   "signalRule": {
     "smaWindow": 20,
     "zBuy": -1.5,

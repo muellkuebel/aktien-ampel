@@ -1,4 +1,4 @@
-const CACHE = "aktien-ampel-v1.31";
+const CACHE = "aktien-ampel-v1.32";
 const ASSETS = [
   "./",
   "./index.html",
@@ -80,4 +80,42 @@ self.addEventListener("fetch", (event) => {
 
   // Bilder/Logos: cache-first
   event.respondWith(caches.match(req).then((cached) => cached || fetch(req)));
+});
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    try { data = { body: event.data && event.data.text() }; } catch (_) {}
+  }
+  const title = data.title || "Aktien Ampel";
+  const options = {
+    body: data.body || "",
+    icon: "./icons/icon-192.png",
+    badge: "./icons/icon-192.png",
+    data: data.data || data,
+    lang: "de",
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || "./";
+  event.waitUntil(
+    (async () => {
+      const all = await clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const c of all) {
+        if (c.url && "focus" in c) {
+          await c.focus();
+          if ("navigate" in c) {
+            try { await c.navigate(target); } catch (e) {}
+          }
+          return;
+        }
+      }
+      if (clients.openWindow) await clients.openWindow(target);
+    })()
+  );
 });

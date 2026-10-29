@@ -88,10 +88,21 @@
         <input id="import-file" type="file" accept="application/json,.json" hidden />
       </section>
 
+
+      <section class="menu-section" id="push-section">
+        <h3 class="menu-h">Benachrichtigungen</h3>
+        <p class="menu-note" id="push-hint">Push-Benachrichtigungen für Kaufen- und Verkaufen-Signale.</p>
+        <div id="push-controls" hidden>
+          <button type="button" id="btn-push-toggle" class="dlg-btn dlg-ok menu-save">Benachrichtigungen einschalten</button>
+          <button type="button" id="btn-push-test" class="dlg-btn dlg-cancel menu-save" style="margin-top:8px;opacity:1;background:rgba(255,255,255,0.08)" hidden>Test-Benachrichtigung</button>
+          <p class="menu-note" id="push-status" style="margin-top:8px"></p>
+        </div>
+      </section>
+
       <section class="menu-section">
         <h3 class="menu-h">Hinweis</h3>
         <p class="menu-note">Keine Anlageberatung – Signal aus fester Regel auf Basis vergangener Kurse. Positionen nur lokal auf diesem Gerät.</p>
-        <p class="menu-version">V1.31</p>
+        <p class="menu-version">V1.32</p>
       </section>
     </div>
   </dialog>
