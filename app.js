@@ -415,7 +415,7 @@
   function exportPayload() {
     return {
       app: "Aktien Ampel",
-      version: "V1.24",
+      version: "V1.25",
       exportedAt: new Date().toISOString(),
       settings: loadSettings(),
       positions: loadPositions(),
@@ -957,7 +957,10 @@
 
   function updateStand(data) {
     const short = formatStandShort(data.updated, data.updatedDisplay);
-    if (standMain) standMain.textContent = short;
+    if (standMain) {
+      standMain.textContent = data.live ? short + " · live" : short;
+      standMain.classList.toggle("is-live", Boolean(data.live));
+    }
     if (stand) stand.textContent = `Stand: ${data.updatedDisplay || "–"}`;
     const fx = data.fx?.usdPerEur;
     if (menuFx) {
@@ -1075,8 +1078,74 @@
     return res.json();
   }
 
+  function reasonLine(last, sma) {
+    if (!sma) return "Kein Abstand zum 20-Tage-Schnitt";
+    const pct = ((last - sma) / sma) * 100;
+    const n = Math.round(Math.abs(pct));
+    if (n === 0) return "nahe am 20-Tage-Schnitt";
+    return pct < 0 ? `${n} % unter dem 20-Tage-Schnitt` : `${n} % über dem 20-Tage-Schnitt`;
+  }
+  function priceDisplayOf(price, currency) {
+    const t = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(price);
+    return `${t} ${currency === "EUR" ? "€" : "$"}`;
+  }
+
+  /** Live-Kurse aller Aktien über den Cloudflare-Kursdienst holen. */
+  let liveBusy = false;
+  async function refreshLive() {
+    if (!marketData || liveBusy) return;
+    liveBusy = true;
+    if (standMain) standMain.classList.add("is-loading");
+    try {
+      const syms = (marketData.stocks || []).map((x) => x.ticker).concat(["EURUSD=X"]);
+      const r = await fetch(QUOTE_URL + "?s=" + syms.map(encodeURIComponent).join(",") + "&t=" + Date.now(), { cache: "no-store" });
+      const j = await r.json();
+      const q = (j && j.quotes) || {};
+      let n = 0;
+      for (const st of marketData.stocks || []) {
+        const x = q[st.ticker];
+        if (!x || typeof x.price !== "number") continue;
+        n++;
+        st.price = x.price;
+        st.priceDisplay = priceDisplayOf(x.price, st.currency);
+        if (x.prevClose) st.dayChangePct = Math.round((x.price / x.prevClose - 1) * 10000) / 100;
+        const sma = Number(st.sma20), sd = Number(st.sd20);
+        if (sma && sd) {
+          st.z = Math.round(((x.price - sma) / sd) * 1000) / 1000;
+          st.distFromSma20Pct = Math.round(((x.price - sma) / sma) * 10000) / 100;
+          st.reason = reasonLine(x.price, sma);
+        }
+      }
+      const fx = q["EURUSD=X"];
+      if (fx && fx.price > 0) marketData.fx = Object.assign({}, marketData.fx, { usdPerEur: fx.price });
+      if (!n) throw new Error("keine Kurse");
+      const now = new Date();
+      marketData.updated = now.toISOString();
+      marketData.updatedDisplay = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(now) + " (live)";
+      marketData.live = true;
+      if (!(dialog && dialog.open)) render(marketData);
+      else updateStand(marketData);
+    } catch (e) {
+      if (standMain) standMain.classList.remove("is-live");
+      console.warn("Live-Kurse fehlgeschlagen", e);
+    } finally {
+      liveBusy = false;
+      if (standMain) standMain.classList.remove("is-loading");
+    }
+  }
+  if (standMain) {
+    standMain.setAttribute("role", "button");
+    standMain.addEventListener("click", refreshLive);
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") refreshLive();
+  });
+
   load()
-    .then(render)
+    .then((d) => {
+      render(d);
+      refreshLive();
+    })
     .catch((err) => {
       if (stand) stand.textContent = "Stand: Daten fehlen";
       grid.innerHTML = `<article class="tile signal-warten" style="grid-column:1/-1;min-height:80px">

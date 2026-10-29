@@ -819,3 +819,7 @@ html, body {
 }
 .live-btn:active { background: rgba(148, 163, 184, 0.3); }
 .live-btn:disabled { opacity: 0.6; }
+
+.stand-main { cursor: pointer; -webkit-tap-highlight-color: transparent; transition: color 0.3s; }
+.stand-main.is-live { color: #22c55e; }
+.stand-main.is-loading { opacity: 0.55; }
