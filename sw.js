@@ -1,4 +1,4 @@
-const CACHE = "aktien-ampel-v1.27";
+const CACHE = "aktien-ampel-v1.28";
 const ASSETS = [
   "./",
   "./index.html",
