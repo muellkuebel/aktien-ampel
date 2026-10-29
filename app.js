@@ -29,6 +29,18 @@
   const bilTotal = document.getElementById("bil-total");
 
   let marketData = null;
+
+  function setAppHeight() {
+    const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    document.documentElement.style.setProperty("--app-h", Math.round(h) + "px");
+  }
+  setAppHeight();
+  window.addEventListener("resize", setAppHeight);
+  window.addEventListener("orientationchange", () => setTimeout(setAppHeight, 150));
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", setAppHeight);
+  }
+
   let dialogResolver = null;
   let dialogMode = null; // "buy" | "sell" | "confirm"
   let buyQtyMode = "betrag"; // "betrag" | "stueck" while buy dialog open
@@ -276,6 +288,16 @@
   }
 
   dialogCancel.addEventListener("click", () => closeDialog(null));
+  // Tap on dimmed area outside the card = Abbrechen
+  dialog.addEventListener("click", (e) => {
+    const form = document.getElementById("dialog-form");
+    if (!form) {
+      if (e.target === dialog) closeDialog(null);
+      return;
+    }
+    if (e.target === dialog || !form.contains(e.target)) closeDialog(null);
+  });
+  document.getElementById("dialog-form")?.addEventListener("click", (e) => e.stopPropagation());
   dialogOk.addEventListener("click", () => {
     if (dialogMode === "buy") {
       const price = readValidatedNumber("kaufpreis");
@@ -359,7 +381,7 @@
   function exportPayload() {
     return {
       app: "Aktien Ampel",
-      version: "V1.18",
+      version: "V1.19",
       exportedAt: new Date().toISOString(),
       settings: loadSettings(),
       positions: loadPositions(),
