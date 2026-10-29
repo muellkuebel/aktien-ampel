@@ -851,3 +851,13 @@ html, body {
   font: inherit;
   font-weight: 600;
 }
+
+/* V1.30: sanftes Einblenden beim Start */
+@keyframes tileIntro { from { opacity: 0; } to { opacity: 1; } }
+.tile.tile-intro { animation: tileIntro 700ms ease-out both; }
+.tile-logo { transition: opacity 600ms ease-out; }
+.tile-logo:not(.is-loaded) { opacity: 0 !important; }
+@media (prefers-reduced-motion: reduce) {
+  .tile.tile-intro { animation: none; }
+  .tile-logo { transition: none; }
+}

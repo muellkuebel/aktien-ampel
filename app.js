@@ -1,5 +1,5 @@
 (() => {
-  const APP_VERSION = "V1.29";
+  const APP_VERSION = "V1.30";
   const POS_KEY = "aktien-ampel-positions";
   const HIST_KEY = "aktien-ampel-history";
   const SET_KEY = "aktien-ampel-settings";
@@ -971,11 +971,17 @@
     }
   }
 
+  const loadedLogos = new Set();
+  let introStart = 0;
+  const INTRO_MS = 700;
   function render(data) {
     if (!data) return;
     marketData = data;
     updateStand(data);
     grid.innerHTML = "";
+    if (!introStart) introStart = performance.now();
+    const introElapsed = performance.now() - introStart;
+    const intro = introElapsed < INTRO_MS;
     const stocks = data.stocks || [];
     const rule = data.rule || {};
     const positions = loadPositions();
@@ -1008,10 +1014,14 @@
         : "";
 
       const logoSrc = `logos/${encodeURIComponent(s.ticker)}.svg`;
+      if (intro) {
+        tile.classList.add("tile-intro");
+        tile.style.animationDelay = `${-introElapsed}ms`;
+      }
       tile.innerHTML = `
         <p class="signal">${escapeHtml(signal)}</p>
         <div class="tile-spacer" aria-hidden="true">
-          <img class="tile-logo" src="${logoSrc}" alt="" aria-hidden="true" draggable="false" />
+          <img class="tile-logo${loadedLogos.has(logoSrc) ? " is-loaded" : ""}" src="${logoSrc}" alt="" aria-hidden="true" draggable="false" />
         </div>
         <div class="meta">
           <p class="name">${escapeHtml(s.name)}</p>
@@ -1023,6 +1033,15 @@
         </div>
         ${btnHtml}
       `;
+      const logoImg = tile.querySelector(".tile-logo");
+      if (logoImg && !loadedLogos.has(logoSrc)) {
+        const done = () => {
+          loadedLogos.add(logoSrc);
+          requestAnimationFrame(() => logoImg.classList.add("is-loaded"));
+        };
+        if (logoImg.complete && logoImg.naturalWidth) done();
+        else logoImg.addEventListener("load", done, { once: true });
+      }
 
       if (actionable) {
         const theme = signal === "Verkaufen" ? "verkaufen" : "kaufen";
