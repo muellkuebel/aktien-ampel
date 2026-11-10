@@ -1,6 +1,6 @@
 {
-  "updated": "2026-11-10T00:49:49+01:00",
-  "updatedDisplay": "10.11.2026 00:49 (Berlin)",
+  "updated": "2026-11-10T15:25:50+01:00",
+  "updatedDisplay": "10.11.2026 15:25 (Berlin)",
   "source": "Yahoo Finance chart API v8, range=3mo interval=1d",
   "rule": {
     "smaWindow": 20,
@@ -11,7 +11,7 @@
   "version": "V1.32",
   "fx": {
     "pair": "EURUSD=X",
-    "usdPerEur": 1.1226,
+    "usdPerEur": 1.1197,
     "note": "USD amount / usdPerEur = EUR amount"
   },
   "stocks": [
@@ -131,57 +131,57 @@
       "ticker": "IFX.DE",
       "name": "Infineon",
       "currency": "EUR",
-      "price": 48.625,
-      "priceDisplay": "48,62 €",
-      "dayChangePct": -21.67,
-      "sma20": 51.839,
-      "sd20": 2.9198,
-      "z": -1.101,
-      "distFromSma20Pct": -6.2,
+      "price": 49.8,
+      "priceDisplay": "49,80 €",
+      "dayChangePct": 2.42,
+      "sma20": 51.0993,
+      "sd20": 2.5053,
+      "z": -0.519,
+      "distFromSma20Pct": -2.54,
       "signal": "Warten",
-      "reason": "6 % unter dem 20-Tage-Schnitt"
+      "reason": "3 % unter dem 20-Tage-Schnitt"
     },
     {
       "ticker": "ENR.DE",
       "name": "Siemens Energy",
       "currency": "EUR",
-      "price": 124.1,
-      "priceDisplay": "124,10 €",
-      "dayChangePct": -19.17,
-      "sma20": 129.491,
-      "sd20": 8.3969,
-      "z": -0.642,
-      "distFromSma20Pct": -4.16,
+      "price": 120.42,
+      "priceDisplay": "120,42 €",
+      "dayChangePct": -2.97,
+      "sma20": 127.225,
+      "sd20": 6.7484,
+      "z": -1.008,
+      "distFromSma20Pct": -5.35,
       "signal": "Warten",
-      "reason": "4 % unter dem 20-Tage-Schnitt"
+      "reason": "5 % unter dem 20-Tage-Schnitt"
     },
     {
       "ticker": "RHM.DE",
       "name": "Rheinmetall",
       "currency": "EUR",
-      "price": 845.4,
-      "priceDisplay": "845,40 €",
-      "dayChangePct": -26.26,
-      "sma20": 1000.125,
-      "sd20": 67.3142,
-      "z": -2.299,
-      "distFromSma20Pct": -15.47,
+      "price": 863.6,
+      "priceDisplay": "863,60 €",
+      "dayChangePct": 2.15,
+      "sma20": 989.795,
+      "sd20": 80.4317,
+      "z": -1.569,
+      "distFromSma20Pct": -12.75,
       "signal": "Kaufen",
-      "reason": "15 % unter dem 20-Tage-Schnitt"
+      "reason": "13 % unter dem 20-Tage-Schnitt"
     },
     {
       "ticker": "ZAL.DE",
       "name": "Zalando",
       "currency": "EUR",
-      "price": 27.41,
-      "priceDisplay": "27,41 €",
-      "dayChangePct": 11.38,
-      "sma20": 26.063,
-      "sd20": 1.2173,
-      "z": 1.107,
-      "distFromSma20Pct": 5.17,
+      "price": 28.0,
+      "priceDisplay": "28,00 €",
+      "dayChangePct": 2.15,
+      "sma20": 26.4075,
+      "sd20": 1.1428,
+      "z": 1.393,
+      "distFromSma20Pct": 6.03,
       "signal": "Warten",
-      "reason": "5 % über dem 20-Tage-Schnitt"
+      "reason": "6 % über dem 20-Tage-Schnitt"
     }
   ],
   "errors": []
